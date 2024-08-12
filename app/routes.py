@@ -1,16 +1,27 @@
 from flask import Blueprint, jsonify
-from .trading import TradingBot
-from .utils import server_stats
+from .trading import TradingBot, DataManager, RealTimeTrainer
+import schedule
+import time
 
 main_blueprint = Blueprint('main', __name__)
 
+symbols = ['AAPL', 'GOOGL', 'MSFT']  # Exemple de symboles
+data_manager = DataManager(symbols)
+trading_bot = TradingBot()
+trainer = RealTimeTrainer(data_manager, trading_bot)
+
+data_manager.start_data_update(interval_minutes=5)
+trainer.start_training(interval_minutes=10)
+
 @main_blueprint.route('/status', methods=['GET'])
 def status():
-    bot = TradingBot()
-    decision, indicator = bot.get_trading_decision()
-    return jsonify({"status": "Modèle en cours d'exécution", "décision": decision, "indicateur ajusté": indicator})
+    decisions = trading_bot.get_trading_decisions(data_manager)
+    return jsonify({
+        "status": "Modèle en cours d'exécution",
+        "décisions": decisions
+    })
 
 @main_blueprint.route('/server-stats', methods=['GET'])
 def server_status():
-    stats = server_stats()
+    stats = trainer.get_server_stats()
     return jsonify(stats)
