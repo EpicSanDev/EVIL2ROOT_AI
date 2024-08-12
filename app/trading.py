@@ -26,7 +26,7 @@ class DataManager:
 
     def get_initial_data(self, symbol):
         logging.info("Fetching initial data for symbol: %s", symbol)
-        return yf.download(symbol, start="2020-01-01", end="2024-01-01")
+        return yf.download(symbol, start="2001-01-01", end="2024-01-01")
 
     def update_data(self):
         logging.info("Updating data for all symbols.")
@@ -132,8 +132,6 @@ class TradingBot:
         else:
             logger.info(f"Holding {symbol}")
 
-
-
 class TradingEnv(Env):
     def __init__(self, data):
         super(TradingEnv, self).__init__()
@@ -141,8 +139,10 @@ class TradingEnv(Env):
         self.current_step = 0
 
         # Vérifiez que les données ont bien des colonnes numériques
-        print("Initial data shape:", self.data.shape)
+        print("Initial data columns:", self.data.columns)
+        print("Initial data types:", self.data.dtypes)
         assert self.data.shape[1] > 0, "Data must have more than 0 columns"
+        assert all(self.data.dtypes.apply(lambda x: np.issubdtype(x, np.number))), "All columns must be numeric"
 
         # Assurez-vous que l'espace d'observation a les bonnes dimensions
         self.observation_space = Box(low=-np.inf, high=np.inf, shape=(self.data.shape[1],), dtype=np.float32)
