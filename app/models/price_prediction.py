@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import GridSearchCV
 import numpy as np
 import logging
 
@@ -8,14 +9,19 @@ class PricePredictionModel:
     def __init__(self):
         self.models = {}
         self.scalers = {}
+        self.param_grid = {
+            'units': [50, 100],
+            'batch_size': [32, 64],
+            'epochs': [50, 100]
+        }
 
-    def build_model(self):
+    def build_model(self, units):
         model = Sequential()
-        model.add(LSTM(50, return_sequences=True, input_shape=(60, 1)))
+        model.add(LSTM(units, return_sequences=True, input_shape=(60, 1)))
         model.add(Dropout(0.2))
-        model.add(LSTM(50, return_sequences=True))
+        model.add(LSTM(units, return_sequences=True))
         model.add(Dropout(0.2))
-        model.add(LSTM(50, return_sequences=False))
+        model.add(LSTM(units, return_sequences=False))
         model.add(Dropout(0.2))
         model.add(Dense(25))
         model.add(Dense(1))
@@ -35,10 +41,22 @@ class PricePredictionModel:
         X_train, y_train = np.array(X_train), np.array(y_train)
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
 
-        model = self.build_model()
-        model.fit(X_train, y_train, batch_size=32, epochs=50)
+        # Use GridSearchCV or custom optimization loop
+        best_params = self._optimize_hyperparameters(X_train, y_train)
+
+        model = self.build_model(units=best_params['units'])
+        model.fit(X_train, y_train, batch_size=best_params['batch_size'], epochs=best_params['epochs'])
         self.models[symbol] = model
         logging.info(f"Model trained for symbol: {symbol}")
+
+    def _optimize_hyperparameters(self, X_train, y_train):
+        # A simple mock optimization loop. Replace with real GridSearchCV or Bayesian Optimization.
+        best_params = {
+            'units': 50,
+            'batch_size': 32,
+            'epochs': 50
+        }
+        return best_params
 
     def predict(self, data, symbol):
         if symbol not in self.scalers or symbol not in self.models:

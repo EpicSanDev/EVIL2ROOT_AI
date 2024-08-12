@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
     <h1>Trading Dashboard</h1>
+    <div id="chart"></div>
     <table class="table">
         <thead>
             <tr>
@@ -21,4 +22,13 @@
             {% endfor %}
         </tbody>
     </table>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        var data = [{
+            x: {{ dates }},
+            y: {{ prices }},
+            type: 'scatter'
+        }];
+        Plotly.newPlot('chart', data);
+    </script>
 {% endblock %}

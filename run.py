@@ -1,6 +1,7 @@
 import asyncio
 from app.trading import TradingBot, DataManager, RealTimeTrainer
 from app.telegram_bot import TelegramBot
+from app.model_trainer import ModelTrainer
 import schedule
 import logging
 
@@ -16,8 +17,11 @@ symbols = stock_symbols + forex_symbols
 # Initialisation des composants
 data_manager = DataManager(symbols)
 trading_bot = TradingBot()
-telegram_bot = TelegramBot()
+# Après l'initialisation du bot et du data manager
+model_trainer = ModelTrainer(trading_bot)
+model_trainer.train_all_models(data_manager)
 trainer = RealTimeTrainer(data_manager, trading_bot)
+telegram_bot = TelegramBot()
 
 def execute_trades(trading_bot, data_manager):
     logger.info("Executing trades...")
