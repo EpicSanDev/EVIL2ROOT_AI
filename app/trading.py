@@ -6,6 +6,7 @@ from .models.price_prediction import PricePredictionModel
 from .models.risk_management import RiskManagementModel
 from .models.indicator_management import IndicatorManagementModel
 from .models.tp_sl_management import TpSlManagementModel
+from .telegram_bot import TelegramBot
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,13 +42,14 @@ class TradingBot:
         self.risk_model = RiskManagementModel()
         self.indicator_model = IndicatorManagementModel()
         self.tp_sl_model = TpSlManagementModel()
-        logger.info("TradingBot initialized with models.")
+        self.telegram_bot = TelegramBot()  # Initialiser le bot Telegram
+        logging.info("TradingBot initialized with models.")
 
     def get_trading_decisions(self, data_manager):
-        logger.info("Generating trading decisions.")
+        logging.info("Generating trading decisions.")
         decisions = {}
         for symbol, data in data_manager.data.items():
-            logger.debug("Processing symbol: %s", symbol)
+            logging.debug("Processing symbol: %s", symbol)
             predicted_price = self.price_model.predict(data, symbol)
             predicted_risk = self.risk_model.predict(data, symbol)
             adjusted_indicator = self.indicator_model.predict(data, symbol)
@@ -59,7 +61,9 @@ class TradingBot:
                     adjusted_indicator > data['Close'][-1]):
                 decision = "Acheter"
                 tp, sl = predicted_tp, predicted_sl
-                logger.info("Buy decision for %s: TP=%s, SL=%s", symbol, tp, sl)
+                message = f"Buy decision for {symbol}: TP={tp}, SL={sl}"
+                logging.info(message)
+                self.telegram_bot.send_message(message)
 
             # Logique de vente
             elif (predicted_price < data['Close'][-1] and
@@ -67,13 +71,15 @@ class TradingBot:
                   adjusted_indicator < data['Close'][-1]):
                 decision = "Vendre"
                 tp, sl = predicted_tp, predicted_sl
-                logger.info("Sell decision for %s: TP=%s, SL=%s", symbol, tp, sl)
+                message = f"Sell decision for {symbol}: TP={tp}, SL={sl}"
+                logging.info(message)
+                self.telegram_bot.send_message(message)
 
             # Ne rien faire
             else:
                 decision = "Ne rien faire"
                 tp, sl = None, None
-                logger.info("No action for %s", symbol)
+                logging.info(f"No action for {symbol}")
 
             decisions[symbol] = {
                 "décision": decision,

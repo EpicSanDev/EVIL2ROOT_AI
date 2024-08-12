@@ -8,3 +8,4 @@ schedule==1.1.0
 python-telegram-bot==20.3
 tensorflow==2.13.0rc0
 keras
+telegram
