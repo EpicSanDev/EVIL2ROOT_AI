@@ -4,6 +4,7 @@ import yfinance as yf
 from app.trading import TradingBot, DataManager, RealTimeTrainer
 from app.telegram_bot import TelegramBot
 from app.model_trainer import ModelTrainer
+from app.models.sentiment_model import load_sentiment_model, predict_sentiment
 import schedule
 import logging
 

@@ -3,13 +3,15 @@ import schedule
 import time
 import logging
 import pandas as pd
-from .models.price_prediction import PricePredictionModel
-from .models.risk_management import RiskManagementModel
-from .models.indicator_management import IndicatorManagementModel
-from .models.tp_sl_management import TpSlManagementModel
+from app.models.price_prediction import PricePredictionModel
+from app.models.risk_management import RiskManagementModel
+from app.models.tp_sl_management import TpSlManagementModel
 from app.models.indicator_management import IndicatorManagementModel
-from .telegram_bot import TelegramBot
-# Configuration du logging
+from app.models.rl_trading import train_rl_agent
+from app.models.sentiment_analysis import analyze_headlines
+from app.models.backtesting import run_backtest
+from app.telegram_bot import TelegramBot
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,7 @@ class DataManager:
         logging.info("Updating data for all symbols.")
         for symbol in self.symbols:
             logging.info("Updating data for symbol: %s", symbol)
-            new_data = yf.download(symbol, period='1d', interval='1m')  # Dernières minutes
+            new_data = yf.download(symbol, period='1d', interval='1m')
             self.data[symbol] = self.data[symbol].append(new_data).drop_duplicates()
         logging.info("Data update completed.")
     
@@ -37,59 +39,6 @@ class DataManager:
         while True:
             schedule.run_pending()
             time.sleep(1)
-
-class TradingBot:
-    def __init__(self):
-        self.price_model = PricePredictionModel()
-        self.risk_model = RiskManagementModel()
-        self.indicator_model = IndicatorManagementModel()
-        self.tp_sl_model = TpSlManagementModel()
-        self.telegram_bot = TelegramBot()  # Initialiser le bot Telegram
-        logging.info("TradingBot initialized with models.")
-
-    def get_trading_decisions(self, data_manager):
-        logging.info("Generating trading decisions.")
-        decisions = {}
-        for symbol, data in data_manager.data.items():
-            logging.debug("Processing symbol: %s", symbol)
-            predicted_price = self.price_model.predict(data, symbol)
-            predicted_risk = self.risk_model.predict(data, symbol)
-            adjusted_indicator = self.indicator_model.predict(data, symbol)
-            predicted_tp, predicted_sl = self.tp_sl_model.predict(data, symbol)
-
-            # Logique d'achat
-            if (predicted_price > data['Close'][-1] and
-                    predicted_risk < 0.02 and
-                    adjusted_indicator > data['Close'][-1]):
-                decision = "Acheter"
-                tp, sl = predicted_tp, predicted_sl
-                message = f"Buy decision for {symbol}: TP={tp}, SL={sl}"
-                logging.info(message)
-                self.telegram_bot.send_message(message)
-
-            # Logique de vente
-            elif (predicted_price < data['Close'][-1] and
-                  predicted_risk < 0.02 and
-                  adjusted_indicator < data['Close'][-1]):
-                decision = "Vendre"
-                tp, sl = predicted_tp, predicted_sl
-                message = f"Sell decision for {symbol}: TP={tp}, SL={sl}"
-                logging.info(message)
-                self.telegram_bot.send_message(message)
-
-            # Ne rien faire
-            else:
-                decision = "Ne rien faire"
-                tp, sl = None, None
-                logging.info(f"No action for {symbol}")
-
-            decisions[symbol] = {
-                "décision": decision,
-                "indicateur ajusté": adjusted_indicator,
-                "Take Profit": tp,
-                "Stop Loss": sl
-            }
-        return decisions
 
 class RealTimeTrainer:
     def __init__(self, data_manager, trading_bot):
@@ -116,69 +65,6 @@ class RealTimeTrainer:
             schedule.run_pending()
             time.sleep(1)
 
-from concurrent.futures import ThreadPoolExecutor
-import logging
-
-class ModelTrainer:
-    def __init__(self, trading_bot):
-        self.trading_bot = trading_bot
-
-    def train_all_models(self, data_manager):
-        with ThreadPoolExecutor() as executor:
-            futures = []
-            for symbol, data in data_manager.data.items():
-                futures.append(executor.submit(self.trading_bot.price_model.train, data, symbol))
-            for future in futures:
-                try:
-                    future.result()
-                except Exception as e:
-                    logging.error(f"Error training model: {e}")
-
-import gym
-from gym import spaces
-import numpy as np
-
-class TradingEnv(gym.Env):
-    def __init__(self, data):
-        super(TradingEnv, self).__init__()
-        self.data = data
-        self.current_step = 0
-
-        # Définir les espaces d'actions et d'observations
-        self.action_space = spaces.Discrete(3)  # 0 = Hold, 1 = Buy, 2 = Sell
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(len(data.columns),), dtype=np.float32)
-
-    def reset(self):
-        self.current_step = 0
-        return self.data.iloc[self.current_step].values
-
-    def step(self, action):
-        self.current_step += 1
-        if self.current_step >= len(self.data):
-            done = True
-        else:
-            done = False
-
-        # Calculer la récompense en fonction de l'action prise
-        reward = 0
-        if action == 1:  # Buy
-            reward = self.data.iloc[self.current_step]['Close'] - self.data.iloc[self.current_step - 1]['Close']
-        elif action == 2:  # Sell
-            reward = self.data.iloc[self.current_step - 1]['Close'] - self.data.iloc[self.current_step]['Close']
-
-        obs = self.data.iloc[self.current_step].values
-        return obs, reward, done, {}
-
-    def render(self, mode='human'):
-        pass
-# app/trading.py
-from app.models.price_prediction import PricePredictionModel
-from app.models.risk_management import RiskManagementModel
-from app.models.tp_sl_management import TpSlManagementModel
-from app.models.indicator_management import IndicatorManagementModel
-from app.models.rl_trading import train_rl_agent
-from app.models.sentiment_analysis import analyze_headlines
-from app.models.backtesting import run_backtest
 
 class TradingBot:
     def __init__(self):
@@ -186,18 +72,21 @@ class TradingBot:
         self.risk_model = RiskManagementModel()
         self.tp_sl_model = TpSlManagementModel()
         self.indicator_model = IndicatorManagementModel()
-        self.rl_model = None  # Pour l'agent RL, que nous allons former plus tard
-        self.indicator_model = IndicatorManagementModel()  # Initialisation de indicator_model
+        self.rl_model = None  # For RL agent, to be trained later
+        self.telegram_bot = TelegramBot()
+        logging.info("TradingBot initialized with models.")
 
     def train_all_models(self, data_manager):
-        # Logique pour entraîner tous les modèles ici
+        logging.info("Training models for all symbols.")
         for symbol, data in data_manager.data.items():
             self.price_model.train(data, symbol)
             self.risk_model.train(data, symbol)
             self.tp_sl_model.train(data, symbol)
             self.indicator_model.train(data, symbol)
+        logging.info("Model training completed.")
 
     def run_reinforcement_learning(self, data_path):
+        logging.info("Starting reinforcement learning training...")
         data = pd.read_csv(data_path)
         self.rl_model = train_rl_agent(data)
 
@@ -207,46 +96,36 @@ class TradingBot:
 
     def run_backtest(self, data_path):
         run_backtest(data_path)
+
     def execute_trades(self, data_manager):
         for symbol, data in data_manager.data.items():
-            # 1. Prédiction du prix
             predicted_price = self.price_model.predict(data, symbol)
-            
-            # 2. Analyse des indicateurs
             indicator_signal = self.indicator_model.predict(data, symbol)
-            
-            # 3. Gestion du risque
             risk_decision = self.risk_model.predict(data, symbol)
-            
-            # 4. Prédiction du Take Profit / Stop Loss
             tp, sl = self.tp_sl_model.predict(data, symbol)
-            
-            # 5. Décision basée sur l'apprentissage par renforcement
+            rl_decision = None
             if self.rl_model:
-                rl_decision = self.rl_model.predict(data)  # Ajustez selon la manière dont RL est utilisé
-            
-            # 6. Analyse sentimentale
+                rl_decision = self.rl_model.predict(data)  # Adjust based on how RL is used
+
             headlines = ["Example headline 1", "Example headline 2"]
             sentiments = self.run_sentiment_analysis(headlines)
             sentiment_score = sum(sentiments) / len(sentiments)
 
-            # Logique de décision finale
             decision = self.combine_signals(predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score)
             self.execute_trade(decision, symbol)
 
     def combine_signals(self, predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score):
-        # Logique pour combiner tous les signaux et prendre une décision finale
-        if sentiment_score > 0.5 and rl_decision == 1:  # Par exemple, si le sentiment est positif et l'agent RL suggère d'acheter
+        if sentiment_score > 0.5 and rl_decision == 1:
             return "buy"
-        elif sentiment_score < -0.5 and rl_decision == 2:  # Si le sentiment est négatif et RL suggère de vendre
+        elif sentiment_score < -0.5 and rl_decision == 2:
             return "sell"
         else:
             return "hold"
 
     def execute_trade(self, decision, symbol):
         if decision == "buy":
-            print(f"Buying {symbol}")
+            logger.info(f"Buying {symbol}")
         elif decision == "sell":
-            print(f"Selling {symbol}")
+            logger.info(f"Selling {symbol}")
         else:
-            print(f"Holding {symbol}")
+            logger.info(f"Holding {symbol}")
