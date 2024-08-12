@@ -1,3 +1,5 @@
+from gym import Env
+from gym.spaces import Discrete, Box
 import yfinance as yf
 import schedule
 import time
@@ -65,14 +67,13 @@ class RealTimeTrainer:
             schedule.run_pending()
             time.sleep(1)
 
-
 class TradingBot:
     def __init__(self):
         self.price_model = PricePredictionModel()
         self.risk_model = RiskManagementModel()
         self.tp_sl_model = TpSlManagementModel()
         self.indicator_model = IndicatorManagementModel()
-        self.rl_model = None  # For RL agent, to be trained later
+        self.rl_model = None  # Pour l'agent RL, que nous allons former plus tard
         self.telegram_bot = TelegramBot()
         logging.info("TradingBot initialized with models.")
 
@@ -129,3 +130,32 @@ class TradingBot:
             logger.info(f"Selling {symbol}")
         else:
             logger.info(f"Holding {symbol}")
+
+
+class TradingEnv(Env):
+    def __init__(self, data):
+        super(TradingEnv, self).__init__()
+        self.data = data
+        self.current_step = 0
+
+        # Assurez-vous que l'espace d'observation a les bonnes dimensions
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(data.shape[1],), dtype=np.float32)
+        self.action_space = Discrete(3)  # 0 = Hold, 1 = Buy, 2 = Sell
+
+    def reset(self):
+        self.current_step = 0
+        return self.data.iloc[self.current_step].values.astype(np.float32)
+
+    def step(self, action):
+        self.current_step += 1
+        done = self.current_step >= len(self.data)
+        reward = 0
+        if action == 1:  # Buy
+            reward = self.data.iloc[self.current_step]['Close'] - self.data.iloc[self.current_step - 1]['Close']
+        elif action == 2:  # Sell
+            reward = self.data.iloc[self.current_step - 1]['Close'] - self.data.iloc[self.current_step]['Close']
+        obs = self.data.iloc[self.current_step].values.astype(np.float32)
+        return obs, reward, done, {}
+
+    def render(self, mode='human'):
+        pass
