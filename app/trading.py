@@ -140,8 +140,11 @@ class TradingEnv(Env):
         self.data = data
         self.current_step = 0
 
+        # Vérifiez que les données ont bien des colonnes numériques
+        print("Initial data shape:", self.data.shape)
+        assert self.data.shape[1] > 0, "Data must have more than 0 columns"
+
         # Assurez-vous que l'espace d'observation a les bonnes dimensions
-        # Le nombre de features (colonnes) dans vos données
         self.observation_space = Box(low=-np.inf, high=np.inf, shape=(self.data.shape[1],), dtype=np.float32)
         self.action_space = Discrete(3)  # 0 = Hold, 1 = Buy, 2 = Sell
 
@@ -149,6 +152,7 @@ class TradingEnv(Env):
         self.current_step = 0
         obs = self.data.iloc[self.current_step].values.astype(np.float32)
         print(f"Reset Observation shape: {obs.shape}")
+        assert obs.shape == self.observation_space.shape, f"Expected shape {self.observation_space.shape}, but got {obs.shape}"
         return obs
 
     def step(self, action):
