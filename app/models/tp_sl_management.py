@@ -24,9 +24,12 @@ class TpSlManagementModel:
         scaled_data = self.scalers[symbol].fit_transform(data['Close'].values.reshape(-1,1))
         X_train, y_train = [], []
 
-        for i in range(60, len(scaled_data)):
+        for i in range(60, len(scaled_data) - 2):  # Assurez-vous qu'il reste assez de données pour TP et SL
             X_train.append(scaled_data[i-60:i, 0])
-            y_train.append(scaled_data[i, 0])
+            # Exemple simple : TP = prix de fermeture à t+1, SL = prix de fermeture à t+2
+            tp = scaled_data[i+1, 0]
+            sl = scaled_data[i+2, 0]
+            y_train.append([tp, sl])
 
         X_train, y_train = np.array(X_train), np.array(y_train)
         X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
@@ -44,4 +47,3 @@ class TpSlManagementModel:
         predicted_tp_sl = self.models[symbol].predict(X_test)
         predicted_tp_sl = self.scalers[symbol].inverse_transform(predicted_tp_sl)
         return predicted_tp_sl[0][0], predicted_tp_sl[0][1]  # Retourne TP et SL
-    

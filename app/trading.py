@@ -131,3 +131,65 @@ class ModelTrainer:
                     future.result()
                 except Exception as e:
                     logging.error(f"Error training model: {e}")
+
+import gym
+from gym import spaces
+import numpy as np
+
+class TradingEnv(gym.Env):
+    def __init__(self, data):
+        super(TradingEnv, self).__init__()
+        self.data = data
+        self.current_step = 0
+
+        # Définir les espaces d'actions et d'observations
+        self.action_space = spaces.Discrete(3)  # 0 = Hold, 1 = Buy, 2 = Sell
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(len(data.columns),), dtype=np.float32)
+
+    def reset(self):
+        self.current_step = 0
+        return self.data.iloc[self.current_step].values
+
+    def step(self, action):
+        self.current_step += 1
+        if self.current_step >= len(self.data):
+            done = True
+        else:
+            done = False
+
+        # Calculer la récompense en fonction de l'action prise
+        reward = 0
+        if action == 1:  # Buy
+            reward = self.data.iloc[self.current_step]['Close'] - self.data.iloc[self.current_step - 1]['Close']
+        elif action == 2:  # Sell
+            reward = self.data.iloc[self.current_step - 1]['Close'] - self.data.iloc[self.current_step]['Close']
+
+        obs = self.data.iloc[self.current_step].values
+        return obs, reward, done, {}
+
+    def render(self, mode='human'):
+        pass
+# app/trading.py
+from app.models.rl_trading import train_rl_agent
+from app.models.sentiment_analysis import analyze_headlines
+from app.models.backtesting import run_backtest
+import pandas as pd
+
+class TradingBot:
+    def __init__(self):
+        # Initialisation des modèles et des composants ici
+        self.price_model = PricePredictionModel()
+        self.risk_model = RiskManagementModel()
+        self.tp_sl_model = TpSlManagementModel()
+
+    def run_reinforcement_learning(self, data_path):
+        data = pd.read_csv(data_path)
+        model = train_rl_agent(data)
+        return model
+
+    def run_sentiment_analysis(self, headlines):
+        sentiments = analyze_headlines(headlines)
+        return sentiments
+
+    def run_backtest(self, data_path):
+        run_backtest(data_path)

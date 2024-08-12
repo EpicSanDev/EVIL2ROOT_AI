@@ -47,6 +47,23 @@ async def main():
 
     logger.info("Starting data update and trading bot...")
     data_manager.start_data_update(interval_minutes=5)
+    bot = TradingBot()
+
+    # Exemples d'utilisation
+    # 1. Apprentissage par renforcement
+    model = bot.run_reinforcement_learning('market_data.csv')
+
+    # 2. Analyse Sentimentale
+    headlines = [
+        "Stock market crashes amid economic uncertainty",
+        "Tech stocks rally on strong earnings reports",
+        "Investors optimistic about economic recovery"
+    ]
+    sentiments = bot.run_sentiment_analysis(headlines)
+    print("Sentiments:", sentiments)
+
+    # 3. Backtesting
+    bot.run_backtest('market_data.csv')
     
     while True:
         schedule.run_pending()
