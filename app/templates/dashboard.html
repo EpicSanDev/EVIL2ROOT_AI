@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Trading Dashboard</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Decision</th>
+                <th>Take Profit</th>
+                <th>Stop Loss</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for symbol, decision in decisions.items() %}
+                <tr>
+                    <td>{{ symbol }}</td>
+                    <td>{{ decision['décision'] }}</td>
+                    <td>{{ decision['Take Profit'] }}</td>
+                    <td>{{ decision['Stop Loss'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,4 +1,6 @@
+import asyncio
 from app.trading import TradingBot, DataManager
+from app.telegram_bot import TelegramBot
 import schedule
 import logging
 
@@ -8,11 +10,13 @@ logger = logging.getLogger(__name__)
 
 # Exemple de symboles combinés pour les actions et le Forex
 forex_symbols = ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X", "USDCAD=X"]
-stock_symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "FB"]
+stock_symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "META"]
 symbols = stock_symbols + forex_symbols
 
+# Initialisation des composants
 data_manager = DataManager(symbols)
 trading_bot = TradingBot()
+telegram_bot = TelegramBot()
 
 def execute_trades(trading_bot, data_manager):
     logger.info("Executing trades...")
@@ -23,9 +27,22 @@ def execute_trades(trading_bot, data_manager):
 
 schedule.every(1).minutes.do(execute_trades, trading_bot, data_manager)
 
-if __name__ == "__main__":
+async def main():
+    start_message = "Trading bot has started successfully."
+    logger.info(start_message)
+
+    try:
+        await telegram_bot.send_message(start_message)
+        logger.info("Start message sent successfully via Telegram.")
+    except Exception as e:
+        logger.error(f"Failed to send start message via Telegram: {e}")
+    
     logger.info("Starting data update and trading bot...")
     data_manager.start_data_update(interval_minutes=5)
+    
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        await asyncio.sleep(1)
+
+if __name__ == "__main__":
+    asyncio.run(main())
