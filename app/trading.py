@@ -1,39 +1,10 @@
+import yfinance as yf
+import schedule
+import time
 from .models.price_prediction import PricePredictionModel
 from .models.risk_management import RiskManagementModel
 from .models.indicator_management import IndicatorManagementModel
 from .models.tp_sl_management import TpSlManagementModel
-import schedule
-import time
-
-class TradingBot:
-    def __init__(self):
-        self.price_model = PricePredictionModel()
-        self.risk_model = RiskManagementModel()
-        self.indicator_model = IndicatorManagementModel()
-        self.tp_sl_model = TpSlManagementModel()
-
-    def get_trading_decisions(self, data_manager):
-        decisions = {}
-        for symbol, data in data_manager.data.items():
-            predicted_price = self.price_model.predict(data, symbol)
-            predicted_risk = self.risk_model.predict(data, symbol)
-            adjusted_indicator = self.indicator_model.predict(data, symbol)
-            predicted_tp, predicted_sl = self.tp_sl_model.predict(data, symbol)
-
-            decision = "Ne rien faire"
-            if predicted_risk < 0.02:  # Exemple de seuil de risque
-                if predicted_price > data['Close'][-1]:
-                    decision = "Acheter"
-                else:
-                    decision = "Vendre"
-
-            decisions[symbol] = {
-                "décision": decision,
-                "indicateur ajusté": adjusted_indicator,
-                "Take Profit": predicted_tp,
-                "Stop Loss": predicted_sl
-            }
-        return decisions
 
 class DataManager:
     def __init__(self, symbols):
@@ -53,6 +24,48 @@ class DataManager:
         while True:
             schedule.run_pending()
             time.sleep(1)
+
+class TradingBot:
+    def __init__(self):
+        self.price_model = PricePredictionModel()
+        self.risk_model = RiskManagementModel()
+        self.indicator_model = IndicatorManagementModel()
+        self.tp_sl_model = TpSlManagementModel()
+
+    def get_trading_decisions(self, data_manager):
+        decisions = {}
+        for symbol, data in data_manager.data.items():
+            predicted_price = self.price_model.predict(data, symbol)
+            predicted_risk = self.risk_model.predict(data, symbol)
+            adjusted_indicator = self.indicator_model.predict(data, symbol)
+            predicted_tp, predicted_sl = self.tp_sl_model.predict(data, symbol)
+
+            # Logique d'achat
+            if (predicted_price > data['Close'][-1] and
+                    predicted_risk < 0.02 and
+                    adjusted_indicator > data['Close'][-1]):
+                decision = "Acheter"
+                tp, sl = predicted_tp, predicted_sl
+
+            # Logique de vente
+            elif (predicted_price < data['Close'][-1] and
+                  predicted_risk < 0.02 and
+                  adjusted_indicator < data['Close'][-1]):
+                decision = "Vendre"
+                tp, sl = predicted_tp, predicted_sl
+
+            # Ne rien faire
+            else:
+                decision = "Ne rien faire"
+                tp, sl = None, None
+
+            decisions[symbol] = {
+                "décision": decision,
+                "indicateur ajusté": adjusted_indicator,
+                "Take Profit": tp,
+                "Stop Loss": sl
+            }
+        return decisions
 
 class RealTimeTrainer:
     def __init__(self, data_manager, trading_bot):
