@@ -93,17 +93,17 @@ class RealTimeTrainer:
     def __init__(self, data_manager, trading_bot):
         self.data_manager = data_manager
         self.trading_bot = trading_bot
-        logger.info("RealTimeTrainer initialized.")
+        logging.info("RealTimeTrainer initialized.")
 
     def train_models(self):
-        logger.info("Training models for all symbols.")
+        logging.info("Training models for all symbols.")
         for symbol, data in self.data_manager.data.items():
-            logger.info("Training models for symbol: %s", symbol)
+            logging.info(f"Training models for symbol: {symbol}")
             self.trading_bot.price_model.train(data, symbol)
             self.trading_bot.risk_model.train(data, symbol)
             self.trading_bot.indicator_model.train(data, symbol)
             self.trading_bot.tp_sl_model.train(data, symbol)
-        logger.info("Model training completed.")
+        logging.info("Model training completed.")
 
     def start_training(self, interval_minutes=10):
         logger.info("Starting model training every %d minutes.", interval_minutes)
