@@ -2,6 +2,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 
+
 class RiskManagementModel:
     def __init__(self):
         self.models = {}

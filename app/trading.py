@@ -15,22 +15,22 @@ class DataManager:
     def __init__(self, symbols):
         self.symbols = symbols
         self.data = {symbol: self.get_initial_data(symbol) for symbol in symbols}
-        logger.info("DataManager initialized with symbols: %s", symbols)
+        logging.info("DataManager initialized with symbols: %s", symbols)
 
     def get_initial_data(self, symbol):
-        logger.info("Fetching initial data for symbol: %s", symbol)
+        logging.info("Fetching initial data for symbol: %s", symbol)
         return yf.download(symbol, start="2020-01-01", end="2024-01-01")
 
     def update_data(self):
-        logger.info("Updating data for all symbols.")
+        logging.info("Updating data for all symbols.")
         for symbol in self.symbols:
-            logger.info("Updating data for symbol: %s", symbol)
+            logging.info("Updating data for symbol: %s", symbol)
             new_data = yf.download(symbol, period='1d', interval='1m')  # Dernières minutes
             self.data[symbol] = self.data[symbol].append(new_data).drop_duplicates()
-        logger.info("Data update completed.")
-
+        logging.info("Data update completed.")
+    
     def start_data_update(self, interval_minutes=5):
-        logger.info("Starting data update every %d minutes.", interval_minutes)
+        logging.info("Starting data update every %d minutes.", interval_minutes)
         schedule.every(interval_minutes).minutes.do(self.update_data)
         while True:
             schedule.run_pending()
@@ -98,7 +98,9 @@ class RealTimeTrainer:
     def train_models(self):
         logging.info("Training models for all symbols.")
         for symbol, data in self.data_manager.data.items():
-            logging.info(f"Training models for symbol: {symbol}")
+            if len(data) < 60:
+                logging.warning(f"Not enough data to train models for symbol: {symbol}")
+                continue
             self.trading_bot.price_model.train(data, symbol)
             self.trading_bot.risk_model.train(data, symbol)
             self.trading_bot.indicator_model.train(data, symbol)

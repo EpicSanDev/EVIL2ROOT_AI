@@ -1,5 +1,5 @@
 import asyncio
-from app.trading import TradingBot, DataManager
+from app.trading import TradingBot, DataManager, RealTimeTrainer
 from app.telegram_bot import TelegramBot
 import schedule
 import logging
@@ -17,6 +17,7 @@ symbols = stock_symbols + forex_symbols
 data_manager = DataManager(symbols)
 trading_bot = TradingBot()
 telegram_bot = TelegramBot()
+trainer = RealTimeTrainer(data_manager, trading_bot)
 
 def execute_trades(trading_bot, data_manager):
     logger.info("Executing trades...")
@@ -37,6 +38,9 @@ async def main():
     except Exception as e:
         logger.error(f"Failed to send start message via Telegram: {e}")
     
+    logger.info("Starting model training...")
+    trainer.train_models()
+
     logger.info("Starting data update and trading bot...")
     data_manager.start_data_update(interval_minutes=5)
     
