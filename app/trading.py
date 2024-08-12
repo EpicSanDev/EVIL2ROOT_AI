@@ -139,7 +139,7 @@ class TradingEnv(Env):
         self.current_step = 0
 
         # Assurez-vous que l'espace d'observation a les bonnes dimensions
-        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(data.shape[1],), dtype=np.float32)
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(self.data.shape[1],), dtype=np.float32)
         self.action_space = Discrete(3)  # 0 = Hold, 1 = Buy, 2 = Sell
 
     def reset(self):
@@ -155,6 +155,10 @@ class TradingEnv(Env):
         elif action == 2:  # Sell
             reward = self.data.iloc[self.current_step - 1]['Close'] - self.data.iloc[self.current_step]['Close']
         obs = self.data.iloc[self.current_step].values.astype(np.float32)
+        
+        # Vérifiez que les dimensions de obs sont correctes
+        assert obs.shape == self.observation_space.shape, f"Expected shape {self.observation_space.shape}, but got {obs.shape}"
+
         return obs, reward, done, {}
 
     def render(self, mode='human'):
