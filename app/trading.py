@@ -5,6 +5,7 @@ import schedule
 import time
 import logging
 import pandas as pd
+import numpy as np
 from app.models.price_prediction import PricePredictionModel
 from app.models.risk_management import RiskManagementModel
 from app.models.tp_sl_management import TpSlManagementModel
@@ -132,6 +133,7 @@ class TradingBot:
             logger.info(f"Holding {symbol}")
 
 
+
 class TradingEnv(Env):
     def __init__(self, data):
         super(TradingEnv, self).__init__()
@@ -139,6 +141,7 @@ class TradingEnv(Env):
         self.current_step = 0
 
         # Assurez-vous que l'espace d'observation a les bonnes dimensions
+        # Le nombre de features (colonnes) dans vos données
         self.observation_space = Box(low=-np.inf, high=np.inf, shape=(self.data.shape[1],), dtype=np.float32)
         self.action_space = Discrete(3)  # 0 = Hold, 1 = Buy, 2 = Sell
 
@@ -150,7 +153,7 @@ class TradingEnv(Env):
 
     def step(self, action):
         self.current_step += 1
-        done = self.current_step >= len(self.data)
+        done = self.current_step >= len(self.data) - 1
         reward = 0
         if action == 1:  # Buy
             reward = self.data.iloc[self.current_step]['Close'] - self.data.iloc[self.current_step - 1]['Close']
@@ -163,3 +166,6 @@ class TradingEnv(Env):
         assert obs.shape == self.observation_space.shape, f"Expected shape {self.observation_space.shape}, but got {obs.shape}"
 
         return obs, reward, done, {}
+
+    def render(self, mode='human'):
+        pass
