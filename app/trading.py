@@ -144,7 +144,9 @@ class TradingEnv(Env):
 
     def reset(self):
         self.current_step = 0
-        return self.data.iloc[self.current_step].values.astype(np.float32)
+        obs = self.data.iloc[self.current_step].values.astype(np.float32)
+        print(f"Reset Observation shape: {obs.shape}")
+        return obs
 
     def step(self, action):
         self.current_step += 1
@@ -157,9 +159,7 @@ class TradingEnv(Env):
         obs = self.data.iloc[self.current_step].values.astype(np.float32)
         
         # Vérifiez que les dimensions de obs sont correctes
+        print(f"Step Observation shape: {obs.shape}")
         assert obs.shape == self.observation_space.shape, f"Expected shape {self.observation_space.shape}, but got {obs.shape}"
 
         return obs, reward, done, {}
-
-    def render(self, mode='human'):
-        pass
