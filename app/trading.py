@@ -2,10 +2,12 @@ import yfinance as yf
 import schedule
 import time
 import logging
+import pandas as pd
 from .models.price_prediction import PricePredictionModel
 from .models.risk_management import RiskManagementModel
 from .models.indicator_management import IndicatorManagementModel
 from .models.tp_sl_management import TpSlManagementModel
+from app.models.indicator_management import IndicatorManagementModel
 from .telegram_bot import TelegramBot
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -170,22 +172,34 @@ class TradingEnv(gym.Env):
     def render(self, mode='human'):
         pass
 # app/trading.py
+from app.models.price_prediction import PricePredictionModel
+from app.models.risk_management import RiskManagementModel
+from app.models.tp_sl_management import TpSlManagementModel
+from app.models.indicator_management import IndicatorManagementModel
 from app.models.rl_trading import train_rl_agent
 from app.models.sentiment_analysis import analyze_headlines
 from app.models.backtesting import run_backtest
-import pandas as pd
 
 class TradingBot:
     def __init__(self):
-        # Initialisation des modèles et des composants ici
         self.price_model = PricePredictionModel()
         self.risk_model = RiskManagementModel()
         self.tp_sl_model = TpSlManagementModel()
+        self.indicator_model = IndicatorManagementModel()
+        self.rl_model = None  # Pour l'agent RL, que nous allons former plus tard
+        self.indicator_model = IndicatorManagementModel()  # Initialisation de indicator_model
+
+    def train_all_models(self, data_manager):
+        # Logique pour entraîner tous les modèles ici
+        for symbol, data in data_manager.data.items():
+            self.price_model.train(data, symbol)
+            self.risk_model.train(data, symbol)
+            self.tp_sl_model.train(data, symbol)
+            self.indicator_model.train(data, symbol)
 
     def run_reinforcement_learning(self, data_path):
         data = pd.read_csv(data_path)
-        model = train_rl_agent(data)
-        return model
+        self.rl_model = train_rl_agent(data)
 
     def run_sentiment_analysis(self, headlines):
         sentiments = analyze_headlines(headlines)
@@ -193,3 +207,46 @@ class TradingBot:
 
     def run_backtest(self, data_path):
         run_backtest(data_path)
+    def execute_trades(self, data_manager):
+        for symbol, data in data_manager.data.items():
+            # 1. Prédiction du prix
+            predicted_price = self.price_model.predict(data, symbol)
+            
+            # 2. Analyse des indicateurs
+            indicator_signal = self.indicator_model.predict(data, symbol)
+            
+            # 3. Gestion du risque
+            risk_decision = self.risk_model.predict(data, symbol)
+            
+            # 4. Prédiction du Take Profit / Stop Loss
+            tp, sl = self.tp_sl_model.predict(data, symbol)
+            
+            # 5. Décision basée sur l'apprentissage par renforcement
+            if self.rl_model:
+                rl_decision = self.rl_model.predict(data)  # Ajustez selon la manière dont RL est utilisé
+            
+            # 6. Analyse sentimentale
+            headlines = ["Example headline 1", "Example headline 2"]
+            sentiments = self.run_sentiment_analysis(headlines)
+            sentiment_score = sum(sentiments) / len(sentiments)
+
+            # Logique de décision finale
+            decision = self.combine_signals(predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score)
+            self.execute_trade(decision, symbol)
+
+    def combine_signals(self, predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score):
+        # Logique pour combiner tous les signaux et prendre une décision finale
+        if sentiment_score > 0.5 and rl_decision == 1:  # Par exemple, si le sentiment est positif et l'agent RL suggère d'acheter
+            return "buy"
+        elif sentiment_score < -0.5 and rl_decision == 2:  # Si le sentiment est négatif et RL suggère de vendre
+            return "sell"
+        else:
+            return "hold"
+
+    def execute_trade(self, decision, symbol):
+        if decision == "buy":
+            print(f"Buying {symbol}")
+        elif decision == "sell":
+            print(f"Selling {symbol}")
+        else:
+            print(f"Holding {symbol}")

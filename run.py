@@ -17,19 +17,17 @@ symbols = stock_symbols + forex_symbols
 # Initialisation des composants
 data_manager = DataManager(symbols)
 trading_bot = TradingBot()
-# Après l'initialisation du bot et du data manager
 model_trainer = ModelTrainer(trading_bot)
-model_trainer.train_all_models(data_manager)
-trainer = RealTimeTrainer(data_manager, trading_bot)
 telegram_bot = TelegramBot()
 
 def execute_trades(trading_bot, data_manager):
     logger.info("Executing trades...")
     decisions = trading_bot.get_trading_decisions(data_manager)
     for symbol, decision_data in decisions.items():
-        logger.info(f"Symbol: {symbol}, Decision: {decision_data['décision']}, "
+        logger.info(f"Symbol: {symbol}, Decision: {decision_data['decision']}, "
                     f"TP: {decision_data['Take Profit']}, SL: {decision_data['Stop Loss']}")
 
+# Planification des trades
 schedule.every(1).minutes.do(execute_trades, trading_bot, data_manager)
 
 async def main():
@@ -43,27 +41,26 @@ async def main():
         logger.error(f"Failed to send start message via Telegram: {e}")
     
     logger.info("Starting model training...")
-    trainer.train_models()
+    model_trainer.train_all_models(data_manager)
+
+    logger.info("Starting reinforcement learning training...")
+    trading_bot.run_reinforcement_learning('market_data.csv')
 
     logger.info("Starting data update and trading bot...")
     data_manager.start_data_update(interval_minutes=5)
-    bot = TradingBot()
 
-    # Exemples d'utilisation
-    # 1. Apprentissage par renforcement
-    model = bot.run_reinforcement_learning('market_data.csv')
-
-    # 2. Analyse Sentimentale
+    # Exemples d'utilisation des autres fonctionnalités
+    # 1. Analyse Sentimentale
     headlines = [
         "Stock market crashes amid economic uncertainty",
         "Tech stocks rally on strong earnings reports",
         "Investors optimistic about economic recovery"
     ]
-    sentiments = bot.run_sentiment_analysis(headlines)
-    print("Sentiments:", sentiments)
+    sentiments = trading_bot.run_sentiment_analysis(headlines)
+    logger.info(f"Sentiments: {sentiments}")
 
-    # 3. Backtesting
-    bot.run_backtest('market_data.csv')
+    # 2. Backtesting
+    trading_bot.run_backtest('market_data.csv')
     
     while True:
         schedule.run_pending()
