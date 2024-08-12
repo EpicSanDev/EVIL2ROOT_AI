@@ -1,0 +1,10 @@
+Flask==2.3.2
+numpy==1.24.3
+pandas==1.5.3
+scikit-learn==1.2.2
+yfinance==0.2.18
+psutil==5.9.4
+schedule==1.1.0
+python-telegram-bot==20.3
+tensorflow==2.12.0
+keras==2.12.0
