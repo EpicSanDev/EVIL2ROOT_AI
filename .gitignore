@@ -3,4 +3,6 @@ myenv/
 market_data.csv
 market_data.csv
 market_data_cleaned_auto.csv
+trading_bot.log
+
 
