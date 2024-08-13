@@ -30,12 +30,22 @@ data = pd.read_csv('market_data.csv')
 logger.info("Colonnes des données téléchargées : %s", data.columns)
 numeric_data = data.select_dtypes(include=[np.number])
 logger.info("Colonnes numériques des données : %s", numeric_data.columns)
+from data_cleaner import clean_data
+
 
 # Initialisation des composants
 data_manager = DataManager(symbols)
 trading_bot = TradingBot()
 model_trainer = ModelTrainer(trading_bot)
 telegram_bot = TelegramBot()
+
+# Paths
+input_file = 'market_data.csv'
+cleaned_file = 'market_data_cleaned_auto.csv'
+
+# Clean the data
+clean_data(input_file, cleaned_file)
+
 
 async def main():
     start_message = "Trading bot has started successfully."
@@ -51,7 +61,7 @@ async def main():
     model_trainer.train_all_models(data_manager)
 
     logger.info("Starting reinforcement learning training...")
-    trading_bot.run_reinforcement_learning('market_data.csv')
+    trading_bot.run_reinforcement_learning('market_data_cleaned_auto.csv')
 
     logger.info("Starting data update and trading bot...")
     data_manager.start_data_update(interval_minutes=5)
@@ -67,7 +77,7 @@ async def main():
     logger.info(f"Sentiments: {sentiments}")
 
     # 2. Backtesting
-    trading_bot.run_backtest('market_data.csv')
+    trading_bot.run_backtest('market_data_cleaned_auto.csv')
     
     while True:
         schedule.run_pending()

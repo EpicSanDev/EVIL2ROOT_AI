@@ -24,7 +24,7 @@ class DataManager:
 
     def get_initial_data(self, symbol):
         logging.info("Fetching initial data for symbol: %s", symbol)
-        return yf.download(symbol, start="2020-01-01", end="2024-01-01")
+        return yf.download(symbol, start="2001-01-01", end="2024-01-01")
 
     def update_data(self):
         logging.info("Updating data for all symbols.")
