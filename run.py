@@ -2,6 +2,7 @@ import os
 import logging
 import asyncio
 import yfinance as yf
+import flask
 from app.trading import TradingBot, DataManager
 from app.telegram_bot import TelegramBot
 from app.model_trainer import ModelTrainer
@@ -52,10 +53,12 @@ data_manager = DataManager(symbols)
 trading_bot = TradingBot()
 model_trainer = ModelTrainer(trading_bot)
 telegram_bot = TelegramBot()
+app = create_app()
 
 async def main():
     start_message = "Trading bot has started successfully."
     logger.info(start_message)
+    app.run(debug=True)
 
     try:
         await telegram_bot.send_message(start_message)
@@ -91,7 +94,6 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-app = create_app()
 
-if __name__ == "__main__":
-    app.run(debug=True)
+
+    
