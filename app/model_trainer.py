@@ -1,4 +1,5 @@
 # app/model_trainer.py
+import logging
 from concurrent.futures import ThreadPoolExecutor
 class ModelTrainer:
     def __init__(self, trading_bot):
