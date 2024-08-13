@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 # Exemple de symboles combinés pour les actions et le Forex
 forex_symbols = ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X", "USDCAD=X"]
 stock_symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "META"]
-symbols = stock_symbols + forex_symbols
+crypto_symbols = ["BTC-USD", "ETH-USD", "XRP-USD", "LTC-USD", "ADA-USD"]  # Ajout de cryptomonnaies
+# Combinaison des symboles
+symbols = stock_symbols + forex_symbols + crypto_symbols
 
 # Télécharger ou générer des données de marché si le fichier n'existe pas
 if not os.path.exists('market_data.csv'):
