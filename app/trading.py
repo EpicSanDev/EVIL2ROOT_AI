@@ -118,16 +118,28 @@ class TradingBot:
             logging.error(f"Error in combine_signals: {e}")
             return "hold"
 
-    def execute_trade(self, decision, symbol):
-        """
-        Executes the trade based on the final decision.
-        """
+    def execute_trade(self, decision, symbol, predicted_price, tp, sl):
+        message = f"Trading Decision for {symbol}:\n"
+        message += f"Action: {decision}\n"
+        message += f"Entry Price: {predicted_price}\n"
+        message += f"Take Profit (TP): {tp}\n"
+        message += f"Stop Loss (SL): {sl}\n"
+
         if decision == "buy":
             logging.info(f"Buying {symbol}")
+            message += "Action taken: Buying"
         elif decision == "sell":
             logging.info(f"Selling {symbol}")
+            message += "Action taken: Selling"
         else:
             logging.info(f"Holding {symbol}")
+            message += "Action taken: Holding"
+        
+        # Envoyer le message via Telegram
+        try:
+            self.telegram_bot.send_message(message)
+        except Exception as e:
+            logging.error(f"Failed to send message via Telegram: {e}")
 
 # Example of running backtest and trades
 if __name__ == "__main__":
