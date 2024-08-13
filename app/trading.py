@@ -1,5 +1,3 @@
-from gym import Env
-from gym.spaces import Discrete, Box
 import yfinance as yf
 import schedule
 import time
@@ -26,7 +24,7 @@ class DataManager:
 
     def get_initial_data(self, symbol):
         logging.info("Fetching initial data for symbol: %s", symbol)
-        return yf.download(symbol, start="2001-01-01", end="2024-01-01")
+        return yf.download(symbol, start="2020-01-01", end="2024-01-01")
 
     def update_data(self):
         logging.info("Updating data for all symbols.")
@@ -39,31 +37,6 @@ class DataManager:
     def start_data_update(self, interval_minutes=5):
         logging.info("Starting data update every %d minutes.", interval_minutes)
         schedule.every(interval_minutes).minutes.do(self.update_data)
-        while True:
-            schedule.run_pending()
-            time.sleep(1)
-
-class RealTimeTrainer:
-    def __init__(self, data_manager, trading_bot):
-        self.data_manager = data_manager
-        self.trading_bot = trading_bot
-        logging.info("RealTimeTrainer initialized.")
-
-    def train_models(self):
-        logging.info("Training models for all symbols.")
-        for symbol, data in self.data_manager.data.items():
-            if len(data) < 60:
-                logging.warning(f"Not enough data to train models for symbol: {symbol}")
-                continue
-            self.trading_bot.price_model.train(data, symbol)
-            self.trading_bot.risk_model.train(data, symbol)
-            self.trading_bot.indicator_model.train(data, symbol)
-            self.trading_bot.tp_sl_model.train(data, symbol)
-        logging.info("Model training completed.")
-
-    def start_training(self, interval_minutes=10):
-        logger.info("Starting model training every %d minutes.", interval_minutes)
-        schedule.every(interval_minutes).minutes.do(self.train_models)
         while True:
             schedule.run_pending()
             time.sleep(1)
@@ -131,45 +104,3 @@ class TradingBot:
             logger.info(f"Selling {symbol}")
         else:
             logger.info(f"Holding {symbol}")
-
-class TradingEnv(Env):
-    def __init__(self, data):
-        super(TradingEnv, self).__init__()
-        self.data = data
-        self.current_step = 0
-
-        # Vérifiez que les données ont bien des colonnes numériques
-        print("Initial data columns:", self.data.columns)
-        print("Initial data types:", self.data.dtypes)
-        assert self.data.shape[1] > 0, "Data must have more than 0 columns"
-        assert all(self.data.dtypes.apply(lambda x: np.issubdtype(x, np.number))), "All columns must be numeric"
-
-        # Assurez-vous que l'espace d'observation a les bonnes dimensions
-        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(self.data.shape[1],), dtype=np.float32)
-        self.action_space = Discrete(3)  # 0 = Hold, 1 = Buy, 2 = Sell
-
-    def reset(self):
-        self.current_step = 0
-        obs = self.data.iloc[self.current_step].values.astype(np.float32)
-        print(f"Reset Observation shape: {obs.shape}")
-        assert obs.shape == self.observation_space.shape, f"Expected shape {self.observation_space.shape}, but got {obs.shape}"
-        return obs
-
-    def step(self, action):
-        self.current_step += 1
-        done = self.current_step >= len(self.data) - 1
-        reward = 0
-        if action == 1:  # Buy
-            reward = self.data.iloc[self.current_step]['Close'] - self.data.iloc[self.current_step - 1]['Close']
-        elif action == 2:  # Sell
-            reward = self.data.iloc[self.current_step - 1]['Close'] - self.data.iloc[self.current_step]['Close']
-        obs = self.data.iloc[self.current_step].values.astype(np.float32)
-        
-        # Vérifiez que les dimensions de obs sont correctes
-        print(f"Step Observation shape: {obs.shape}")
-        assert obs.shape == self.observation_space.shape, f"Expected shape {self.observation_space.shape}, but got {obs.shape}"
-
-        return obs, reward, done, {}
-
-    def render(self, mode='human'):
-        pass

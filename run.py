@@ -1,13 +1,13 @@
 import os
 import asyncio
 import yfinance as yf
+from app.trading import TradingBot, DataManager
+from app.telegram_bot import TelegramBot
+from app.model_trainer import ModelTrainer
 import schedule
 import logging
 import pandas as pd
 import numpy as np
-from app.trading import TradingBot, DataManager
-from app.telegram_bot import TelegramBot
-from app.model_trainer import ModelTrainer
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +29,6 @@ if not os.path.exists('market_data.csv'):
 data = pd.read_csv('market_data.csv')
 logger.info("Colonnes des données téléchargées : %s", data.columns)
 numeric_data = data.select_dtypes(include=[np.number])
-print("Colonnes numériques : ", numeric_data.columns)
 logger.info("Colonnes numériques des données : %s", numeric_data.columns)
 
 # Initialisation des composants
@@ -37,16 +36,6 @@ data_manager = DataManager(symbols)
 trading_bot = TradingBot()
 model_trainer = ModelTrainer(trading_bot)
 telegram_bot = TelegramBot()
-
-def execute_trades(trading_bot, data_manager):
-    logger.info("Executing trades...")
-    decisions = trading_bot.get_trading_decisions(data_manager)
-    for symbol, decision_data in decisions.items():
-        logger.info(f"Symbol: {symbol}, Decision: {decision_data['décision']}, "
-                    f"TP: {decision_data['Take Profit']}, SL: {decision_data['Stop Loss']}")
-
-# Planification des trades
-schedule.every(1).minutes.do(execute_trades, trading_bot, data_manager)
 
 async def main():
     start_message = "Trading bot has started successfully."

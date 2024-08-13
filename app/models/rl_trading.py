@@ -1,5 +1,3 @@
-# app/models/rl_trading.py
-
 import numpy as np
 import pandas as pd
 from stable_baselines3 import DQN
