@@ -47,7 +47,7 @@ class TradingBot:
         self.risk_model = RiskManagementModel()
         self.tp_sl_model = TpSlManagementModel()
         self.indicator_model = IndicatorManagementModel()
-        self.rl_model = None  # Pour l'agent RL, que nous allons former plus tard
+        self.rl_model = None  # For RL agent, to be trained later
         self.telegram_bot = TelegramBot()
         logging.info("TradingBot initialized with models.")
 
@@ -90,17 +90,52 @@ class TradingBot:
             self.execute_trade(decision, symbol)
 
     def combine_signals(self, predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score):
-        if sentiment_score > 0.5 and rl_decision == 1:
-            return "buy"
-        elif sentiment_score < -0.5 and rl_decision == 2:
-            return "sell"
-        else:
+        try:
+            # Logic to combine model predictions into a final trading decision
+            if risk_decision > 0.7:  # High risk
+                logging.info(f"High risk detected for symbol, holding position.")
+                return "hold"
+
+            if rl_decision is not None:  # Reinforcement Learning decision takes priority
+                if rl_decision == 1:
+                    return "buy"
+                elif rl_decision == 2:
+                    return "sell"
+
+            if sentiment_score > 0.5 and predicted_price > indicator_signal:
+                return "buy"
+            elif sentiment_score < -0.5 and predicted_price < indicator_signal:
+                return "sell"
+
+            # If none of the above are decisive, fall back to TP/SL management
+            if tp > sl:
+                return "buy"
+            elif sl > tp:
+                return "sell"
+
+            return "hold"  # Default to holding if signals are conflicting or neutral
+
+        except Exception as e:
+            logging.error(f"Error in combine_signals: {e}")
             return "hold"
 
     def execute_trade(self, decision, symbol):
         if decision == "buy":
-            logger.info(f"Buying {symbol}")
+            logging.info(f"Buying {symbol}")
         elif decision == "sell":
-            logger.info(f"Selling {symbol}")
+            logging.info(f"Selling {symbol}")
         else:
-            logger.info(f"Holding {symbol}")
+            logging.info(f"Holding {symbol}")
+
+# Example of running backtest and trades
+if __name__ == "__main__":
+    data_manager = DataManager(["AAPL", "GOOGL"])  # Example symbols
+    trading_bot = TradingBot()
+    trading_bot.train_all_models(data_manager)
+    trading_bot.run_reinforcement_learning('market_data_cleaned_auto.csv')
+    
+    # Running backtest
+    trading_bot.run_backtest('market_data_cleaned_auto.csv')
+
+    # Execute trades
+    trading_bot.execute_trades(data_manager)
