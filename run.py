@@ -70,7 +70,6 @@ crypto_symbols = [
 # Combine all symbols
 symbols = stock_symbols + forex_symbols + crypto_symbols
 
-# Adding more stock symbols to reach a total of 300 symbols
 additional_symbols = [
     "F", "GM", "TM", "HMC", "NSANY", "VWAGY", "BMWYY",
     "HYMTF", "RACE", "TSLA", "NIO", "XPEV", "LI", "BYDDF", "FUV", "NKLA",
@@ -87,7 +86,6 @@ additional_symbols = [
     "GL", "MFC", "SLF", "PNX", "THG", "RLI", "SIGI", "WRB", "CNA", "MCY"
 ]
 
-# Final list of symbols with 300 entries
 symbols = symbols + additional_symbols
 
 # Télécharger ou générer des données de marché si le fichier n'existe pas
