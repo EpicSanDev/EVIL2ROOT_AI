@@ -11,3 +11,7 @@ scikit-learn
 nltk
 vaderSentiment
 psutil
+flask
+stable_baselines3
+gym
+torch
