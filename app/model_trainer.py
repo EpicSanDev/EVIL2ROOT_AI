@@ -1,34 +1,36 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 class ModelTrainer:
     def __init__(self, trading_bot):
         self.trading_bot = trading_bot
 
-    def train_all_models(self, data_manager):
+    async def train_all_models(self, data_manager):
         try:
-            # Notifier que l'entraînement commence
+            # Notify that training is starting
             start_message = "Training for all models is starting..."
-            self.trading_bot.telegram_bot.send_message(start_message)
+            await self.trading_bot.telegram_bot.send_message(start_message)
             logging.info(start_message)
 
             with ThreadPoolExecutor() as executor:
-                futures = []
-                for symbol, data in data_manager.data.items():
-                    futures.append(executor.submit(self.train_single_model, data, symbol))
+                loop = asyncio.get_event_loop()
+                futures = [
+                    loop.run_in_executor(executor, self.train_single_model, data, symbol)
+                    for symbol, data in data_manager.data.items()
+                ]
 
-                # Attendre que tous les modèles soient entraînés
-                for future in futures:
-                    future.result()
+                # Wait for all models to be trained
+                await asyncio.gather(*futures)
 
-            # Notifier que l'entraînement est terminé
+            # Notify that training is complete
             complete_message = "Training for all models has completed."
-            self.trading_bot.telegram_bot.send_message(complete_message)
+            await self.trading_bot.telegram_bot.send_message(complete_message)
             logging.info(complete_message)
 
         except Exception as e:
             error_message = f"Error during model training: {e}"
-            self.trading_bot.telegram_bot.send_message(error_message)
+            await self.trading_bot.telegram_bot.send_message(error_message)
             logging.error(error_message)
 
     def train_single_model(self, data, symbol):
@@ -39,12 +41,12 @@ class ModelTrainer:
             self.trading_bot.tp_sl_model.train(data, symbol)
             self.trading_bot.indicator_model.train(data, symbol)
 
-            # Notifier que l'entraînement pour un symbole est terminé
+            # Notify that training for a symbol is complete
             single_complete_message = f"Training for {symbol} model completed."
-            self.trading_bot.telegram_bot.send_message(single_complete_message)
+            asyncio.run(self.trading_bot.telegram_bot.send_message(single_complete_message))
             logging.info(single_complete_message)
 
         except Exception as e:
             error_message = f"Error during training of {symbol}: {e}"
-            self.trading_bot.telegram_bot.send_message(error_message)
+            asyncio.run(self.trading_bot.telegram_bot.send_message(error_message))
             logging.error(error_message)
