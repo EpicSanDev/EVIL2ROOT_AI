@@ -39,3 +39,28 @@
        'Volume.13', 'Volume.14'],
       dtype='object')
 2024-08-13 19:52:27,325 - __main__ - INFO - Colonnes numériques des données : Index([], dtype='object')
+2024-08-13 19:52:36,206 - __main__ - INFO - Trading bot has started successfully.
+2024-08-13 19:52:36,428 - __main__ - INFO - Start message sent successfully via Telegram.
+2024-08-13 19:52:36,428 - __main__ - INFO - Starting model training...
+2024-08-13 20:14:59,478 - __main__ - INFO - Starting the trading bot...
+2024-08-13 20:14:59,578 - __main__ - INFO - Colonnes des données téléchargées : Index(['Price', 'Adj Close', 'Adj Close.1', 'Adj Close.2', 'Adj Close.3',
+       'Adj Close.4', 'Adj Close.5', 'Adj Close.6', 'Adj Close.7',
+       'Adj Close.8', 'Adj Close.9', 'Adj Close.10', 'Adj Close.11',
+       'Adj Close.12', 'Adj Close.13', 'Adj Close.14', 'Close', 'Close.1',
+       'Close.2', 'Close.3', 'Close.4', 'Close.5', 'Close.6', 'Close.7',
+       'Close.8', 'Close.9', 'Close.10', 'Close.11', 'Close.12', 'Close.13',
+       'Close.14', 'High', 'High.1', 'High.2', 'High.3', 'High.4', 'High.5',
+       'High.6', 'High.7', 'High.8', 'High.9', 'High.10', 'High.11', 'High.12',
+       'High.13', 'High.14', 'Low', 'Low.1', 'Low.2', 'Low.3', 'Low.4',
+       'Low.5', 'Low.6', 'Low.7', 'Low.8', 'Low.9', 'Low.10', 'Low.11',
+       'Low.12', 'Low.13', 'Low.14', 'Open', 'Open.1', 'Open.2', 'Open.3',
+       'Open.4', 'Open.5', 'Open.6', 'Open.7', 'Open.8', 'Open.9', 'Open.10',
+       'Open.11', 'Open.12', 'Open.13', 'Open.14', 'Volume', 'Volume.1',
+       'Volume.2', 'Volume.3', 'Volume.4', 'Volume.5', 'Volume.6', 'Volume.7',
+       'Volume.8', 'Volume.9', 'Volume.10', 'Volume.11', 'Volume.12',
+       'Volume.13', 'Volume.14'],
+      dtype='object')
+2024-08-13 20:14:59,579 - __main__ - INFO - Colonnes numériques des données : Index([], dtype='object')
+2024-08-13 20:15:07,077 - __main__ - INFO - Trading bot has started successfully.
+2024-08-13 20:15:07,310 - __main__ - INFO - Start message sent successfully via Telegram.
+2024-08-13 20:15:07,310 - __main__ - INFO - Starting model training...

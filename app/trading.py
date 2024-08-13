@@ -12,6 +12,8 @@ from app.models.rl_trading import train_rl_agent
 from app.models.sentiment_analysis import analyze_headlines
 from app.models.backtesting import run_backtest
 from app.telegram_bot import TelegramBot
+from app.model_trainer import ModelTrainer
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,7 +63,11 @@ class TradingBot:
             self.risk_model.train(data, symbol)
             self.tp_sl_model.train(data, symbol)
             self.indicator_model.train(data, symbol)
-        logging.info("Model training completed.")
+        # Notifier que l'entraînement est terminé
+        complete_message = "Training for all models has completed."
+        self.trading_bot.telegram_bot.send_message(complete_message)
+        logging.info(complete_message)
+        
 
     def run_reinforcement_learning(self, data_path):
         logging.info("Starting reinforcement learning training...")
@@ -71,6 +77,23 @@ class TradingBot:
     def run_sentiment_analysis(self, headlines):
         sentiments = analyze_headlines(headlines)
         return sentiments
+    def train_single_model(self, data, symbol):
+        try:
+            logging.info(f"Training model for {symbol}...")
+            self.trading_bot.price_model.train(data, symbol)
+            self.trading_bot.risk_model.train(data, symbol)
+            self.trading_bot.tp_sl_model.train(data, symbol)
+            self.trading_bot.indicator_model.train(data, symbol)
+
+            # Notifier que l'entraînement pour un symbole est terminé
+            single_complete_message = f"Training for {symbol} model completed."
+            self.trading_bot.telegram_bot.send_message(single_complete_message)
+            logging.info(single_complete_message)
+
+        except Exception as e:
+            error_message = f"Error during training of {symbol}: {e}"
+            self.trading_bot.telegram_bot.send_message(error_message)
+            logging.error(error_message)
 
     def run_backtest(self, data_path):
         run_backtest(data_path)
