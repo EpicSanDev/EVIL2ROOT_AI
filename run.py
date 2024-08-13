@@ -29,6 +29,7 @@ if not os.path.exists('market_data.csv'):
 data = pd.read_csv('market_data.csv')
 logger.info("Colonnes des données téléchargées : %s", data.columns)
 numeric_data = data.select_dtypes(include=[np.number])
+print("Colonnes numériques : ", numeric_data.columns)
 logger.info("Colonnes numériques des données : %s", numeric_data.columns)
 
 # Initialisation des composants
