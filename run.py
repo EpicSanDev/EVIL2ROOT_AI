@@ -9,15 +9,16 @@ import logging
 import pandas as pd
 import numpy as np
 
-# Configuration du logger pour écrire dans un fichier et la console
+# Configuration de la journalisation
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,  # Niveau de log
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Format des messages de log
     handlers=[
-        logging.FileHandler("trading_bot.log"),  # Nom du fichier de log
-        logging.StreamHandler()  # Affichage des logs dans la console
+        logging.FileHandler("trading_bot.log"),  # Enregistre les logs dans un fichier
+        logging.StreamHandler()  # Affiche les logs dans la console
     ]
 )
+
 
 logger = logging.getLogger(__name__)
 
