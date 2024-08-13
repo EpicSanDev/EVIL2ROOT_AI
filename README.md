@@ -1,5 +1,3 @@
-Certainly! Here’s a polished and detailed description for your GitHub repository that showcases the features and capabilities of your project:
-
 ---
 
 # **AI-Powered Trading Bot**
