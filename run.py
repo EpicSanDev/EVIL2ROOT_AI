@@ -1,14 +1,28 @@
 import os
+import logging
 import asyncio
 import yfinance as yf
 from app.trading import TradingBot, DataManager
 from app.telegram_bot import TelegramBot
 from app.model_trainer import ModelTrainer
 import schedule
-import logging
 import pandas as pd
 import numpy as np
 
+file_handler = logging.FileHandler('trading_bot.log')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("Starting the trading bot...")
 # Configuration de la journalisation
 logging.basicConfig(
     level=logging.INFO,  # Niveau de log
@@ -22,10 +36,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
-# Configuration du logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Exemple de symboles combinés pour les actions et le Forex
 forex_symbols = ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X", "USDCAD=X"]
