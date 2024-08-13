@@ -13,6 +13,7 @@ class ModelTrainer:
                 futures.append(executor.submit(self.trading_bot.price_model.train, data, symbol))
                 futures.append(executor.submit(self.trading_bot.risk_model.train, data, symbol))
                 futures.append(executor.submit(self.trading_bot.tp_sl_model.train, data, symbol))
+                futures.append(executor.submit(self.trading_bot.indicator_model.train, data, symbol))
             for future in futures:
                 try:
                     future.result()
