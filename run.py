@@ -21,7 +21,7 @@ symbols = stock_symbols + forex_symbols
 # Télécharger ou générer des données de marché si le fichier n'existe pas
 if not os.path.exists('market_data.csv'):
     logger.info("Le fichier 'market_data.csv' n'existe pas. Téléchargement des données de marché...")
-    data = yf.download(symbols, start='2022-01-01', end='2023-01-01')
+    data = yf.download(symbols, start='2001-01-01', end='2024-01-01')
     data.to_csv('market_data.csv')
     logger.info("Données de marché téléchargées et sauvegardées dans 'market_data.csv'")
 
