@@ -1,34 +1,31 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <h1>Trading Dashboard</h1>
-    <div id="chart"></div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Symbol</th>
-                <th>Decision</th>
-                <th>Take Profit</th>
-                <th>Stop Loss</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for symbol, decision in decisions.items() %}
-                <tr>
-                    <td>{{ symbol }}</td>
-                    <td>{{ decision['décision'] }}</td>
-                    <td>{{ decision['Take Profit'] }}</td>
-                    <td>{{ decision['Stop Loss'] }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <h1>Trading Bot Dashboard</h1>
+    
+    <h2>System Performance</h2>
+    <div id="cpu-chart"></div>
+
+    <h2>Bot Status</h2>
+    <div id="bot-status">
+        <p>State: <span id="bot-state">Loading...</span></p>
+        <p>Signals: <span id="bot-signals">Loading...</span></p>
+    </div>
+
     <script>
-        var data = [{
-            x: {{ dates }},
-            y: {{ prices }},
-            type: 'scatter'
-        }];
-        Plotly.newPlot('chart', data);
+        // Parse the JSON string into a Plotly figure
+        var cpuChart = JSON.parse('{{ cpu_chart|safe }}');
+        Plotly.newPlot('cpu-chart', cpuChart.data, cpuChart.layout);
+
+        // Fetch bot status
+        async function fetchBotStatus() {
+            const response = await fetch('/bot_status');
+            const data = await response.json();
+            document.getElementById('bot-state').textContent = data.state;
+            document.getElementById('bot-signals').textContent = data.signals.join(', ');
+        }
+
+        fetchBotStatus();
+        setInterval(fetchBotStatus, 5000);  // Refresh every 5 seconds
     </script>
 {% endblock %}

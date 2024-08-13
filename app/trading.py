@@ -14,7 +14,6 @@ from app.models.backtesting import run_backtest
 from app.telegram_bot import TelegramBot
 from app.model_trainer import ModelTrainer
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -33,10 +32,7 @@ class DataManager:
         for symbol in self.symbols:
             logging.info("Updating data for symbol: %s", symbol)
             new_data = yf.download(symbol, period='1d', interval='1m')
-            
-            # Combine the existing data with the new data using pd.concat
             self.data[symbol] = pd.concat([self.data[symbol], new_data]).drop_duplicates()
-            
         logging.info("Data update completed.")
     
     def start_data_update(self, interval_minutes=5):
@@ -54,7 +50,12 @@ class TradingBot:
         self.indicator_model = IndicatorManagementModel()
         self.rl_model = None  # For RL agent, to be trained later
         self.telegram_bot = TelegramBot()
+        self.latest_signals = []  # Store the latest signals here
         logging.info("TradingBot initialized with models.")
+
+    def get_latest_signals(self):
+        """Returns the latest trading signals stored in the bot."""
+        return self.latest_signals
 
     def train_all_models(self, data_manager):
         logging.info("Training models for all symbols.")
@@ -63,11 +64,26 @@ class TradingBot:
             self.risk_model.train(data, symbol)
             self.tp_sl_model.train(data, symbol)
             self.indicator_model.train(data, symbol)
-        # Notifier que l'entraînement est terminé
-        complete_message = "Training for all models has completed."
-        self.trading_bot.telegram_bot.send_message(complete_message)
-        logging.info(complete_message)
         
+        complete_message = "Training for all models has completed."
+        self.telegram_bot.send_message(complete_message)
+        logging.info(complete_message)
+
+    def train_single_model(self, data, symbol):
+        try:
+            logging.info(f"Training model for {symbol}...")
+            self.price_model.train(data, symbol)
+            self.risk_model.train(data, symbol)
+            self.tp_sl_model.train(data, symbol)
+            self.indicator_model.train(data, symbol)
+
+            single_complete_message = f"Training for {symbol} model completed."
+            self.telegram_bot.send_message(single_complete_message)
+            logging.info(single_complete_message)
+        except Exception as e:
+            error_message = f"Error during training of {symbol}: {e}"
+            self.telegram_bot.send_message(error_message)
+            logging.error(error_message)
 
     def run_reinforcement_learning(self, data_path):
         logging.info("Starting reinforcement learning training...")
@@ -75,62 +91,44 @@ class TradingBot:
         self.rl_model = train_rl_agent(data)
 
     def run_sentiment_analysis(self, headlines):
-        sentiments = analyze_headlines(headlines)
-        return sentiments
-    def train_single_model(self, data, symbol):
-        try:
-            logging.info(f"Training model for {symbol}...")
-            self.trading_bot.price_model.train(data, symbol)
-            self.trading_bot.risk_model.train(data, symbol)
-            self.trading_bot.tp_sl_model.train(data, symbol)
-            self.trading_bot.indicator_model.train(data, symbol)
-
-            # Notifier que l'entraînement pour un symbole est terminé
-            single_complete_message = f"Training for {symbol} model completed."
-            self.trading_bot.telegram_bot.send_message(single_complete_message)
-            logging.info(single_complete_message)
-
-        except Exception as e:
-            error_message = f"Error during training of {symbol}: {e}"
-            self.trading_bot.telegram_bot.send_message(error_message)
-            logging.error(error_message)
+        return analyze_headlines(headlines)
 
     def run_backtest(self, data_path):
         run_backtest(data_path)
 
     def execute_trades(self, data_manager):
         for symbol, data in data_manager.data.items():
-            # Predict various signals
             predicted_price = self.price_model.predict(data, symbol)
             indicator_signal = self.indicator_model.predict(data, symbol)
             risk_decision = self.risk_model.predict(data, symbol)
             tp, sl = self.tp_sl_model.predict(data, symbol)
             rl_decision = self.rl_model.predict(data) if self.rl_model else None
 
-            # Sentiment analysis based on the latest news headlines
             headlines = ["Example headline 1", "Example headline 2"]
             sentiment_score = np.mean(self.run_sentiment_analysis(headlines))
 
-            # Combine all signals into a final trading decision
             decision = self.combine_signals(predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score)
-            self.execute_trade(decision, symbol)
+            self.execute_trade(decision, symbol, predicted_price, tp, sl)
+
+            self.latest_signals.append({
+                'symbol': symbol,
+                'decision': decision,
+                'predicted_price': predicted_price,
+                'tp': tp,
+                'sl': sl,
+                'sentiment_score': sentiment_score
+            })
 
     def combine_signals(self, predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score):
-        """
-        Combines the signals from various models to make a final trading decision.
-        """
         try:
-            # Assessing the risk; if risk is high, avoid trading
             if risk_decision > 0.7:
                 return "hold"
 
-            # Primary decision factors: sentiment, RL, and price vs. indicator signals
             if sentiment_score > 0.5 and rl_decision == 1 and predicted_price > indicator_signal:
                 return "buy"
             elif sentiment_score < -0.5 and rl_decision == 2 and predicted_price < indicator_signal:
                 return "sell"
             else:
-                # Secondary factors: take profit (TP) and stop loss (SL) signals
                 if tp > sl:
                     return "buy"
                 elif sl > tp:
@@ -150,19 +148,31 @@ class TradingBot:
 
         if decision == "buy":
             logging.info(f"Buying {symbol}")
-            message += "Action taken: Buying"
+            message += "\nAction taken: Buying"
         elif decision == "sell":
             logging.info(f"Selling {symbol}")
-            message += "Action taken: Selling"
+            message += "\nAction taken: Selling"
         else:
             logging.info(f"Holding {symbol}")
-            message += "Action taken: Holding"
+            message += "\nAction taken: Holding"
         
-        # Envoyer le message via Telegram
         try:
             self.telegram_bot.send_message(message)
         except Exception as e:
             logging.error(f"Failed to send message via Telegram: {e}")
+
+    def start_real_time_scanning(self, data_manager, interval_seconds=60):
+        """Scans the market for trading opportunities at regular intervals."""
+        def scan_and_trade():
+            logging.info("Scanning market for opportunities...")
+            self.execute_trades(data_manager)
+        
+        logging.info(f"Starting real-time market scanning every {interval_seconds} seconds.")
+        schedule.every(interval_seconds).seconds.do(scan_and_trade)
+        
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
 
 # Example of running backtest and trades
 if __name__ == "__main__":
@@ -174,5 +184,5 @@ if __name__ == "__main__":
     # Running backtest
     trading_bot.run_backtest('market_data_cleaned_auto.csv')
 
-    # Execute trades
-    trading_bot.execute_trades(data_manager)
+    # Start real-time market scanning
+    trading_bot.start_real_time_scanning(data_manager)
