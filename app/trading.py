@@ -77,52 +77,51 @@ class TradingBot:
 
     def execute_trades(self, data_manager):
         for symbol, data in data_manager.data.items():
+            # Predict various signals
             predicted_price = self.price_model.predict(data, symbol)
             indicator_signal = self.indicator_model.predict(data, symbol)
             risk_decision = self.risk_model.predict(data, symbol)
             tp, sl = self.tp_sl_model.predict(data, symbol)
-            rl_decision = None
-            if self.rl_model:
-                rl_decision = self.rl_model.predict(data)  # Adjust based on how RL is used
+            rl_decision = self.rl_model.predict(data) if self.rl_model else None
 
+            # Sentiment analysis based on the latest news headlines
             headlines = ["Example headline 1", "Example headline 2"]
-            sentiments = self.run_sentiment_analysis(headlines)
-            sentiment_score = sum(sentiments) / len(sentiments)
+            sentiment_score = np.mean(self.run_sentiment_analysis(headlines))
 
+            # Combine all signals into a final trading decision
             decision = self.combine_signals(predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score)
             self.execute_trade(decision, symbol)
 
     def combine_signals(self, predicted_price, indicator_signal, risk_decision, tp, sl, rl_decision, sentiment_score):
+        """
+        Combines the signals from various models to make a final trading decision.
+        """
         try:
-            # Logic to combine model predictions into a final trading decision
-            if risk_decision > 0.7:  # High risk
-                logging.info(f"High risk detected for symbol, holding position.")
+            # Assessing the risk; if risk is high, avoid trading
+            if risk_decision > 0.7:
                 return "hold"
 
-            if rl_decision is not None:  # Reinforcement Learning decision takes priority
-                if rl_decision == 1:
+            # Primary decision factors: sentiment, RL, and price vs. indicator signals
+            if sentiment_score > 0.5 and rl_decision == 1 and predicted_price > indicator_signal:
+                return "buy"
+            elif sentiment_score < -0.5 and rl_decision == 2 and predicted_price < indicator_signal:
+                return "sell"
+            else:
+                # Secondary factors: take profit (TP) and stop loss (SL) signals
+                if tp > sl:
                     return "buy"
-                elif rl_decision == 2:
+                elif sl > tp:
                     return "sell"
-
-            if sentiment_score > 0.5 and predicted_price > indicator_signal:
-                return "buy"
-            elif sentiment_score < -0.5 and predicted_price < indicator_signal:
-                return "sell"
-
-            # If none of the above are decisive, fall back to TP/SL management
-            if tp > sl:
-                return "buy"
-            elif sl > tp:
-                return "sell"
-
-            return "hold"  # Default to holding if signals are conflicting or neutral
-
+                else:
+                    return "hold"
         except Exception as e:
             logging.error(f"Error in combine_signals: {e}")
             return "hold"
 
     def execute_trade(self, decision, symbol):
+        """
+        Executes the trade based on the final decision.
+        """
         if decision == "buy":
             logging.info(f"Buying {symbol}")
         elif decision == "sell":
