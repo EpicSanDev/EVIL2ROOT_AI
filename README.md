@@ -54,8 +54,7 @@ Welcome to the **AI-Powered Trading Bot** repository! This project is a comprehe
 ### Installation
 Clone the repository and install the required dependencies:
 ```bash
-git clone https://github.com/yourusername/ai-powered-trading-bot.git
-cd ai-powered-trading-bot
+git clone https://github.com/EpicSanDev/EVIL2ROOT_AI.git
 pip install -r requirements.txt
 ```
 
