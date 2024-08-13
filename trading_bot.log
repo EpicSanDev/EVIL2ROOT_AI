@@ -127,3 +127,7 @@
        'Volume.13', 'Volume.14'],
       dtype='object')
 2024-08-13 21:21:21,849 - __main__ - INFO - Colonnes numériques des données : Index([], dtype='object')
+2024-08-13 22:48:26,978 - __main__ - INFO - Starting the trading bot...
+2024-08-13 22:51:09,041 - __main__ - INFO - Trading bot has started successfully.
+2024-08-13 22:51:09,282 - __main__ - INFO - Start message sent successfully via Telegram.
+2024-08-13 22:51:09,283 - __main__ - INFO - Starting model training...

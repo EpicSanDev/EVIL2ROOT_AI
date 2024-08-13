@@ -1,0 +1,13 @@
+yfinance
+tensorflow
+pandas
+python-telegram-bot
+keras
+numpy
+pandas
+schedule
+backtrader
+scikit-learn
+nltk
+vaderSentiment
+psutil
