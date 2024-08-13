@@ -31,7 +31,10 @@ class DataManager:
         for symbol in self.symbols:
             logging.info("Updating data for symbol: %s", symbol)
             new_data = yf.download(symbol, period='1d', interval='1m')
-            self.data[symbol] = self.data[symbol].append(new_data).drop_duplicates()
+            
+            # Combine the existing data with the new data using pd.concat
+            self.data[symbol] = pd.concat([self.data[symbol], new_data]).drop_duplicates()
+            
         logging.info("Data update completed.")
     
     def start_data_update(self, interval_minutes=5):
