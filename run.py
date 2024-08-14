@@ -3,6 +3,7 @@ import logging
 import asyncio
 import yfinance as yf
 import flask
+import threading
 from app.trading import TradingBot, DataManager
 from app.telegram_bot import TelegramBot
 from app.model_trainer import ModelTrainer
@@ -10,7 +11,9 @@ import schedule
 import pandas as pd
 import numpy as np
 from app import create_app
-from data_cleaner import clean_data
+
+# Initialize Flask app
+app = create_app()
 
 # Logging configuration
 file_handler = logging.FileHandler('trading_bot.log')
@@ -36,14 +39,31 @@ additional_symbols = ["F", "GM", "TM", "HMC", "NSANY", "VWAGY", "BMWYY", "HYMTF"
 
 symbols = stock_symbols + forex_symbols + crypto_symbols + additional_symbols
 
-# Download or generate market data if the file doesn't exist
-if not os.path.exists('market_data.csv'):
-    logger.info("Le fichier 'market_data.csv' n'existe pas. Téléchargement des données de marché...")
-    data = yf.download(symbols, start='2001-01-01', end='2024-01-01')
-    data.to_csv('market_data.csv')
-    logger.info("Données de marché téléchargées et sauvegardées dans 'market_data.csv'")
+# File paths
+input_file = 'market_data.csv'
+cleaned_file = 'market_data_cleaned_auto.csv'
+
+# Ensure the market data file is created before proceeding
+if not os.path.exists(input_file):
+    logger.info(f"{input_file} not found. Downloading market data...")
+    try:
+        data = yf.download(symbols, start='2001-01-01', end='2024-01-01')
+        data.to_csv(input_file)
+        logger.info(f"Market data downloaded and saved to {input_file}")
+    except Exception as e:
+        logger.error(f"Failed to download market data: {e}")
+else:
+    logger.info(f"{input_file} already exists. Skipping download.")
+
+# Check if the file now exists and log the result
+if os.path.exists(input_file):
+    logger.info(f"{input_file} is confirmed to exist.")
+else:
+    logger.error(f"Failed to create {input_file}. Exiting.")
+    exit(1)
 
 # Clean the data
+from data_cleaner import clean_data
 input_file = 'market_data.csv'
 cleaned_file = 'market_data_cleaned_auto.csv'
 clean_data(input_file, cleaned_file)
@@ -55,10 +75,14 @@ model_trainer = ModelTrainer(trading_bot)
 telegram_bot = TelegramBot()
 app = create_app()
 
+# Function to run the Flask app in a separate thread
+def run_flask_app():
+    app.run(debug=True)
+
+# Main asynchronous function for the trading bot
 async def main():
     start_message = "Trading bot has started successfully."
     logger.info(start_message)
-    app.run(debug=True)
 
     try:
         await telegram_bot.send_message(start_message)
@@ -91,7 +115,13 @@ async def main():
         schedule.run_pending()
         await asyncio.sleep(1)
 
+# Entry point for the script
 if __name__ == "__main__":
+    # Start the Flask app in a separate thread
+    flask_thread = threading.Thread(target=run_flask_app)
+    flask_thread.start()
+
+    # Run the trading bot in the main thread
     asyncio.run(main())
 
 

@@ -43,10 +43,18 @@ class ModelTrainer:
 
             # Notify that training for a symbol is complete
             single_complete_message = f"Training for {symbol} model completed."
-            asyncio.run(self.trading_bot.telegram_bot.send_message(single_complete_message))
+            
+            # Use the event loop from the train_all_models method
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.trading_bot.telegram_bot.send_message(single_complete_message))
+            
             logging.info(single_complete_message)
 
         except Exception as e:
             error_message = f"Error during training of {symbol}: {e}"
-            asyncio.run(self.trading_bot.telegram_bot.send_message(error_message))
+            
+            # Use the event loop from the train_all_models method
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.trading_bot.telegram_bot.send_message(error_message))
+            
             logging.error(error_message)
