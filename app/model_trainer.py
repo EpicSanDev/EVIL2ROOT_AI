@@ -1,10 +1,14 @@
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+import joblib  # For saving and loading models
 
 class ModelTrainer:
-    def __init__(self, trading_bot):
+    def __init__(self, trading_bot, model_dir="saved_models"):
         self.trading_bot = trading_bot
+        self.model_dir = model_dir
+        os.makedirs(self.model_dir, exist_ok=True)  # Create directory if it doesn't exist
 
     async def train_all_models(self, data_manager):
         try:
@@ -36,25 +40,39 @@ class ModelTrainer:
     def train_single_model(self, data, symbol):
         try:
             logging.info(f"Training model for {symbol}...")
-            self.trading_bot.price_model.train(data, symbol)
-            self.trading_bot.risk_model.train(data, symbol)
-            self.trading_bot.tp_sl_model.train(data, symbol)
-            self.trading_bot.indicator_model.train(data, symbol)
+
+            # Define file paths for each model
+            price_model_path = os.path.join(self.model_dir, f"{symbol}_price_model.pkl")
+            risk_model_path = os.path.join(self.model_dir, f"{symbol}_risk_model.pkl")
+            tp_sl_model_path = os.path.join(self.model_dir, f"{symbol}_tp_sl_model.pkl")
+            indicator_model_path = os.path.join(self.model_dir, f"{symbol}_indicator_model.pkl")
+
+            # Check if models already exist
+            if os.path.exists(price_model_path) and os.path.exists(risk_model_path) \
+                    and os.path.exists(tp_sl_model_path) and os.path.exists(indicator_model_path):
+                logging.info(f"Models for {symbol} already exist. Skipping training.")
+            else:
+                # Train and save the models
+                self.trading_bot.price_model.train(data, symbol)
+                joblib.dump(self.trading_bot.price_model, price_model_path)
+                
+                self.trading_bot.risk_model.train(data, symbol)
+                joblib.dump(self.trading_bot.risk_model, risk_model_path)
+                
+                self.trading_bot.tp_sl_model.train(data, symbol)
+                joblib.dump(self.trading_bot.tp_sl_model, tp_sl_model_path)
+                
+                self.trading_bot.indicator_model.train(data, symbol)
+                joblib.dump(self.trading_bot.indicator_model, indicator_model_path)
 
             # Notify that training for a symbol is complete
             single_complete_message = f"Training for {symbol} model completed."
-
-            # Run the asynchronous notification within the event loop
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self.trading_bot.telegram_bot.send_message(single_complete_message))
-
             logging.info(single_complete_message)
 
         except Exception as e:
             error_message = f"Error during training of {symbol}: {e}"
-            
-            # Run the asynchronous notification within the event loop
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self.trading_bot.telegram_bot.send_message(error_message))
-            
             logging.error(error_message)
