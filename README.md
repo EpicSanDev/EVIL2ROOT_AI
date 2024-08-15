@@ -80,5 +80,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 For questions, feedback, or just to connect, reach out via [Telegram](https://t.me/bastienjavaux).
 
 ---
-
-This description highlights the key features of your project, provides clear instructions for getting started, and encourages collaboration. Make sure to customize the placeholder links and information to match your actual project setup.
