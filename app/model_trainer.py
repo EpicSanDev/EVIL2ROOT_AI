@@ -3,12 +3,23 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 import joblib  # For saving and loading models
+from keras.models import load_model
 
 class ModelTrainer:
     def __init__(self, trading_bot, model_dir="saved_models"):
         self.trading_bot = trading_bot
         self.model_dir = model_dir
         os.makedirs(self.model_dir, exist_ok=True)  # Create directory if it doesn't exist
+    def train_or_load_model(self, data, symbol):
+        model_path = f'models/{symbol}_model.h5'
+        if os.path.exists(model_path):
+            logging.info(f"Loading existing model for {symbol}.")
+            model = load_model(model_path)
+        else:
+            logging.info(f"Training new model for {symbol}.")
+            model = self.train_model(data, symbol)
+            model.save(model_path)
+        return model
 
     async def train_all_models(self, data_manager):
         try:

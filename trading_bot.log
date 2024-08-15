@@ -176,3 +176,9 @@
 2024-08-14 12:11:01,113 - __main__ - INFO - Trading bot has started successfully.
 2024-08-14 12:11:01,334 - __main__ - INFO - Start message sent successfully via Telegram.
 2024-08-14 12:11:01,335 - __main__ - INFO - Starting model training...
+2024-08-15 19:26:35,331 - __main__ - INFO - Starting the trading bot...
+2024-08-15 19:26:35,331 - __main__ - INFO - market_data.csv already exists. Skipping download.
+2024-08-15 19:26:35,331 - __main__ - INFO - market_data.csv is confirmed to exist.
+2024-08-15 19:28:58,700 - __main__ - INFO - Trading bot has started successfully.
+2024-08-15 19:28:58,937 - __main__ - INFO - Start message sent successfully via Telegram.
+2024-08-15 19:28:58,937 - __main__ - INFO - Starting model training...
